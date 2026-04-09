@@ -302,9 +302,223 @@ void infoSignal(int sig)
     runStatus = 0;
 }
 ```
+##  One letter for destiny
 
+> **Description :**
+> membuat 3 fungsi yagn dapat dipanggil dengan argument dan melakukan pemberkasan proses
 
+####  argument 1
 
+```c
+
+    if (argc > 1 && strcmp(argv[1], "-daemon") == 0)
+    {
+        createFile();
+        daemonInit();
+        prctl(PR_SET_NAME, "maya", 0, 0, 0);
+        memset(argv[0], 0, strlen(argv[0]));
+        strcpy(argv[0], "maya");
+        srand(time(NULL));
+        while (1)
+        {
+            sleep(10);
+            secret();
+            surprise();
+        }
+    }
+```
+Program ini akan berjalan ketika user menggunakan command `./nameExe.exe -daemon` lalu program akan menjalankan `createFile()` dan menjalankan `daemonInit` lalu untuk mengganti nama proses command menjadi maya disini saya mengguanakn `memset dan strcpy`. lalu seperti keterangan soal setiap sepuluh detik akan menjalankan fungis `secret()` dan `sruprise`.
+
+##### createFile()
+
+```c
+void createFile()
+{
+    FILE *tmp = fopen("LoveLetter.txt", "w");
+    if (tmp)
+        fclose(tmp);
+}
+```
+Untuk mmenginisiasi file disini saya menggunakan `fopen()` dan argument `w` yang  berguna untuk membuat file jika belum ada.
+
+##### daemonInit()
+```c
+void daemonInit()
+{
+    pid_t pid = fork();
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    umask(0);
+    setsid();
+
+    fclose(stdin);
+    fclose(stdout);
+    fclose(stderr);
+}
+```
+fungsi tersebut menjelaskan cara membuat child baru yang menjadikan nya seolah olah menjadi parent dengan cara memberi sid baru dan mematikan proses parent nya.
+
+##### secret()
+
+```c
+void secret()
+{
+    int r = rand() % 4;
+
+    logEvent("secret", "RUNNING");
+
+    FILE *tmp = fopen("LoveLetter.txt", "w");
+    if (!tmp)
+    {
+        logEvent("secret", "ERROR");
+        return;
+    };
+    fprintf(tmp, "%s", listKata[r]);
+    fclose(tmp);
+    logEvent("secret", "SUCCESS");
+}
+```
+
+fungsi ini akan dipanggil oleh child setial 10 detik sekali. fungsi tersebut bertugas menimpa isi file `LoveLette.txt` dengan salah satu dari list kata. dan untuk mengisi log saya membuat juga fungsi `logEvent()` untuk mengetahui proses tersebut sedang berjalan,error,dan sukses.
+
+##### logEvent()
+
+```c
+void logEvent(const char *proses, const char *status)
+{
+    FILE *f = fopen("ethereal.log", "a");
+    if (!f)
+        return;
+    char waktu[512];
+    time_t t = time(NULL);
+    struct tm *tm_info = localtime(&t);
+    strftime(waktu, sizeof(waktu), "[%d:%m:%Y]-[%H:%M:%S]", tm_info);
+    fprintf(f, "%s_%s_%s\n", waktu, proses, status);
+
+    fclose(f);
+}
+```
+
+program tersebut berfungsi memasukan kata baru ke baris terakhir dari sebuah file dengan format waktu,proses yagn dijalankan dan status proses.
+
+##### surprise()
+
+```c
+void surprise()
+{
+    logEvent("surprise", "RUNNING");
+    if (access("LoveLetter.txt", F_OK) != 0)
+    {
+        logEvent("surprise", "ERROR");
+        return;
+    }
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+
+        execlp("sh", "sh", "-c", "base64 LoveLetter.txt > temp.txt && mv temp.txt LoveLetter.txt", NULL);
+        perror("exec gagal");
+        _exit(1);
+    }
+    else
+    {
+        int status;
+        wait(&status);
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+        {
+            logEvent("surprise", "SUCCESS");
+        }
+        else
+        {
+            logEvent("surprise", "ERROR");
+        }
+    }
+}
+```
+
+program tersebut bertugas mengenkripsi file menjadi `base64` dengan cara menggunakan `sh` dan agar `logEvent()` bisa bekerja dengan optimal disini saya membuat 2 pengecekan , pertama utnuk mengecek apakah file ada lalu kedua saya membuat fork agar bisa menangkap error dari `execlp()` dan menuliskan kondisi ke `logEvent()`.
+
+#### argument 2
+
+```c
+    else if (argc > 1 && strcmp(argv[1], "-decrypt") == 0)
+    {
+        decrypt();
+        return 0;
+    }
+```
+
+kondisi tersebut bertugas jika user memasukan argument `-decrypt` program akan langsung menjalankan `decrypt()`.
+
+```c
+void decrypt()
+{
+    logEvent("decrypt", "RUNNING");
+    if (access("LoveLetter.txt", F_OK) != 0)
+    {
+        logEvent("decrypt", "ERROR");
+        return;
+    }
+    pid_t pid = fork();
+
+    if (pid == 0)
+    {
+
+        execlp("sh", "sh", "-c", "base64 -d LoveLetter.txt > tmp.txt  && mv tmp.txt  LoveLetter.txt", NULL);
+        perror("exec gagal");
+        _exit(1);
+    }
+    else
+    {
+        int status;
+        wait(&status);
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+        {
+            logEvent("decrypt", "SUCCESS");
+        }
+        else
+        {
+            logEvent("decrypt", "ERROR");
+        }
+    }
+}
+
+```
+sama seperti `secret()` disini saya membuat 2 kondisi pengecekan , pertama pengecekan untuk acces file yang kedua saya menggunaan child agar bisa menangkap error dari `execlp()`.
+
+#### argument 3
+
+```c
+    else if (argc > 1 && strcmp(argv[1], "-kill") == 0)
+    {
+        logEvent("kill", "RUNNING");
+        pid_t pid = fork();
+        if (pid == 0)
+        {
+            execlp("pkill", "pkill", "maya", NULL);
+            perror("exec gagal");
+            _exit(1);
+        }
+        else
+        {
+            int status;
+            wait(&status);
+            if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+            {
+                logEvent("kill", "SUCCESS");
+            }
+            else
+            {
+                logEvent("kill", "ERROR");
+            }
+        }
+        return 0;
+    }
+```
+program tersebut bertugas mengangkap argument `-kill`. program tersebut bergunhsi meng kill proses maya disini saya menggunakan child karena ingin menangkap jika terjadi error dari `execlp`.
 
 ---
 <div align="center">
