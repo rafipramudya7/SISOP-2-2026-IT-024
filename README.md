@@ -52,7 +52,7 @@ Membuat sebuah child yang berfungsi untuk membuat sebuah folder bernama `brankas
 ```
 
 ####  Child 2
-Membuat sebuah child yang berfungsi untuk mencari baris yang memiliki value `Belum Lunas` menggunakan grep via sh dan memindahkanya ke `brankas_kedai/daftar_penunggak.txt`
+Membuat sebuah child yang berfungsi untuk mencari baris yang memiliki value `Belum Lunas` menggunakan grep via sh dan memindahkanya ke dalam `brankas_kedai/daftar_penunggak.txt`
 
 ```c
     if (pid < 0)
