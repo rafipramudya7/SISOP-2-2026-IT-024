@@ -29,7 +29,7 @@
 
 
 ####  Child 1 
-Membuat sebuah child yang berfungsi untuk membuat sebuah folder bernama `brankas_kedai` dengan cara mengugnkana fungsi `execlp()` dan argumen `mkdir`. DIsini diberkian juga opengecekan pid agar process mana yang kita inginkan untuk melakukan sebuah proses , dan buat parrent nya utnuk menunggu child 1
+Membuat sebuah child yang berfungsi untuk membuat sebuah folder bernama `brankas_kedai` dengan cara mengugnkana fungsi `execlp()` dan argumen `mkdir`. DIsini diberkian juga pengecekan pid agar process mana yang kita inginkan untuk melakukan sebuah proses , dan buat parrent nya untuk menunggu child 1
 
 ```c
     if (pid < 0)
@@ -52,7 +52,7 @@ Membuat sebuah child yang berfungsi untuk membuat sebuah folder bernama `brankas
 ```
 
 ####  Child 2
-Membuat sebuah child yang berfungsi untuk mencari baris yang memiliki value `Belum Lunas` dan memindahkanya ke `brankas_kedai/daftar_penunggak.txt`
+Membuat sebuah child yang berfungsi untuk mencari baris yang memiliki value `Belum Lunas` menggunakan grep via sh dan memindahkanya ke `brankas_kedai/daftar_penunggak.txt`
 
 ```c
     if (pid < 0)
@@ -77,17 +77,15 @@ Membuat sebuah child yang berfungsi untuk mencari baris yang memiliki value `Bel
 ```
 
 ####  Child 3
-Menjadikan folder `brankas_kedai` menjadi sebuah zip.
+Menjadikan folder `brankas_kedai` menjadi sebuah zip. disini saya menggunakan sh dan grep .
 ```c
     if (pid < 0)
     {
-        error(3);
+        error(5);
     }
     else if (pid == 0)
     {
-        execlp("sh", "sh", "-c",
-               "grep 'Belum Lunas' brankas_kedai/buku_hutang.csv > brankas_kedai/daftar_penunggak.txt",
-               NULL);
+        execlp("zip", "zip","-q", "-r", "rahasia_muthu.zip", "brankas_kedai", NULL);
         exit(1);
     }
     else
@@ -95,7 +93,7 @@ Menjadikan folder `brankas_kedai` menjadi sebuah zip.
         waitpid(pid, &status, 0);
         if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
         {
-            error(4);
+            error(6);
         }
     }
 ```
@@ -104,7 +102,7 @@ Menjadikan folder `brankas_kedai` menjadi sebuah zip.
 > **Description :**
 > membuat sebuah daemon yang bertugas mengecek perubahan file dan menuliskan sebuah log
 
-disini saya mengugnkana 3 child proses yang nantinya akan berjalan di background prosess. child 1 berfungsi sebagai pengganti parent yang memilki `setid()` yang dijalankan dengan fungsi `demonize()`.
+disini saya menggunakan 3 child proses yang nantinya akan berjalan di background prosess. child 1 berfungsi sebagai pengganti parent yang memilki `setid()` yang dijalankan dengan fungsi `demonize()`.
 ```c
 void daemonize(){
     pid_t pid = fork();
@@ -152,7 +150,7 @@ int main(){
     return 0; 
 }
 ```
-pertama ada fungsi `srand()` berguna mengatur seed agar fungsi `rand()` yang dijalankan program bervariasi dan ada fungsi `signal()` yang berfungsi mengatur signal pada setiap child yang berarti jika ada exit dari setiap child baik dengan `kill` maupun `ctrl+c` akan menjalankan fungsi `infoSignal()`.
+ fungsi `signal()` yang berfungsi mengatur signal pada setiap child yang berarti jika ada exit dari setiap child baik dengan `kill` maupun `ctrl+c` akan menjalankan fungsi `infoSignal()`.
 
 lalu kita ada 2 prosess pemanggilan 2 child dengan nama `c1` dan `c2` dan ada  `while()` yang berfungsi menjaga daemon pengganti parent yang berguna menjaga child tetap aktif.
 
@@ -272,7 +270,7 @@ cek jika masih awal inisiasi maka copy file saat ini ke `lastContent` variable
         }
 
 ```
-deteksi jika variable `lastContent` ada yang berbedan dengan isi file saat ini maka buka file `work.log` lalu append `"contract violated."` ke dalam `work.log`  lalu untuk file `contract.txt` kita timpa dengan text baru sesuai format dengan ditambah waktu pengganti sekarang . dan yagn terakhir jangan lupa ganti isis `lastContent` menjadi isi yang baru yang berguna untuk pengecekan selanjutnya.
+deteksi jika variable `lastContent` ada yang berbedan dengan isi file saat ini maka buka file `work.log` lalu append `"contract violated."` ke dalam `work.log`  lalu untuk file `contract.txt` kita timpa dengan text baru sesuai format dengan ditambah waktu pengganti sekarang . dan yang terakhir jangan lupa ganti isi `lastContent` menjadi isi yang baru yang berguna untuk pengecekan selanjutnya.
 
 ###  `cekFile()`
 sebuah fungsi yang berguna untuk mengecek apakah ada file yang dicari
@@ -285,7 +283,7 @@ int cekFile(const char *filename)
 }
 ```
 ###  `infoSignal()`
-sebuah fungsi yang berguna untuk melakukan penulisan ke dalam `work.log` jika ada condisi sebuah child yang exit. dan merubah status running menjadi off guna mematikan daemon pengganti parent
+sebuah fungsi yang berguna untuk melakukan penulisan ke dalam `work.log` jika ada kondisi sebuah child yang exit. dan merubah status running menjadi off,  guna mematikan daemon pengganti parent
 
 ```c
 void infoSignal(int sig)
@@ -327,7 +325,7 @@ void infoSignal(int sig)
         }
     }
 ```
-Program ini akan berjalan ketika user menggunakan command `./nameExe.exe -daemon` lalu program akan menjalankan `createFile()` dan menjalankan `daemonInit` lalu untuk mengganti nama proses command menjadi maya disini saya mengguanakn `memset dan strcpy`. lalu seperti keterangan soal setiap sepuluh detik akan menjalankan fungis `secret()` dan `sruprise`.
+Program ini akan berjalan ketika user menggunakan command `./nameExe.exe -daemon` lalu program akan menjalankan `createFile()` dan menjalankan `daemonInit` lalu untuk mengganti nama proses command menjadi maya disini saya mengguanakn `memset dan strcpy`. lalu seperti keterangan soal setiap sepuluh detik akan menjalankan fungsi `secret()` dan `sruprise`.
 
 ##### createFile()
 
@@ -382,7 +380,7 @@ void secret()
 }
 ```
 
-fungsi ini akan dipanggil oleh child setial 10 detik sekali. fungsi tersebut bertugas menimpa isi file `LoveLette.txt` dengan salah satu dari list kata. dan untuk mengisi log saya membuat juga fungsi `logEvent()` untuk mengetahui proses tersebut sedang berjalan,error,dan sukses.
+fungsi ini akan dipanggil oleh child setiap 10 detik sekali. fungsi tersebut bertugas menimpa isi file `LoveLette.txt` dengan salah satu dari list kata. dan untuk mengisi log saya membuat juga fungsi `logEvent()` untuk mengetahui proses tersebut sedang berjalan,error, dan sukses.
 
 ##### logEvent()
 
@@ -402,7 +400,7 @@ void logEvent(const char *proses, const char *status)
 }
 ```
 
-program tersebut berfungsi memasukan kata baru ke baris terakhir dari sebuah file dengan format waktu,proses yagn dijalankan dan status proses.
+program tersebut berfungsi memasukan kata baru ke baris terakhir dari sebuah file dengan format waktu,proses yang dijalankan dan status proses.
 
 ##### surprise()
 
@@ -487,7 +485,7 @@ void decrypt()
 }
 
 ```
-sama seperti `secret()` disini saya membuat 2 kondisi pengecekan , pertama pengecekan untuk acces file yang kedua saya menggunaan child agar bisa menangkap error dari `execlp()`.
+inti dari fungsi program tersebut men decrypte file hasil enkripsi kembali seperti semula.sama seperti `secret()` disini saya membuat 2 kondisi pengecekan , pertama pengecekan untuk acces file yang kedua saya menggunaan child agar bisa menangkap error dari `execlp()`.
 
 #### argument 3
 
@@ -518,7 +516,7 @@ sama seperti `secret()` disini saya membuat 2 kondisi pengecekan , pertama penge
         return 0;
     }
 ```
-program tersebut bertugas mengangkap argument `-kill`. program tersebut bergunhsi meng kill proses maya disini saya menggunakan child karena ingin menangkap jika terjadi error dari `execlp`.
+program tersebut bertugas mengangkap argument `-kill`. program tersebut berfungsi meng kill proses maya . disini saya menggunakan child karena ingin menangkap jika terjadi error dari `execlp`.
 
 ---
 <div align="center">
