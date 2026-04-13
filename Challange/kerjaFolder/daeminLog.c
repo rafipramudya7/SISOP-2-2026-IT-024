@@ -13,12 +13,6 @@ const char *listKata[] = {
     "aku mencintaimu dari sekarang hingga selamanya",
     "aku akan menjauh darimu, hingga takdir mempertemukan kita di versi kita yang terbaik",
     "kalau aku dilahirkan kembali, aku tetap akan terus menyayangimu"};
-void createFile()
-{
-    FILE *tmp = fopen("LoveLetter.txt", "w");
-    if (tmp)
-        fclose(tmp);
-}
 
 void logEvent(const char *proses, const char *status)
 {
@@ -30,105 +24,62 @@ void logEvent(const char *proses, const char *status)
     struct tm *tm_info = localtime(&t);
     strftime(waktu, sizeof(waktu), "[%d:%m:%Y]-[%H:%M:%S]", tm_info);
     fprintf(f, "%s_%s_%s\n", waktu, proses, status);
-
     fclose(f);
 }
+
+void infoSignal(int sig)
+{
+    logEvent("DAEMON", "EXIT");
+    exit(EXIT_SUCCESS); // ✅ fix bug 4
+}
+
 void secret()
 {
     int r = rand() % 4;
-
     logEvent("secret", "RUNNING");
-
     FILE *tmp = fopen("LoveLetter.txt", "w");
     if (!tmp)
     {
         logEvent("secret", "ERROR");
         return;
-    };
+    }
     fprintf(tmp, "%s", listKata[r]);
     fclose(tmp);
     logEvent("secret", "SUCCESS");
 }
-void decrypt()
+
+void createFile()
 {
-    logEvent("decrypt", "RUNNING");
-    if (access("LoveLetter.txt", F_OK) != 0)
+    logEvent("CREATE", "RUNNING");
+    FILE *tmp = fopen("LoveLetter.txt", "w");
+    if (tmp)
     {
-        logEvent("decrypt", "ERROR");
-        return;
-    }
-    pid_t pid = fork();
-
-    if (pid == 0)
-    {
-
-        execlp("sh", "sh", "-c", "base64 -d LoveLetter.txt > tmp.txt  && mv tmp.txt  LoveLetter.txt", NULL);
-        perror("exec gagal");
-        _exit(1);
+        fclose(tmp);
+        logEvent("CREATE", "SUCCESS"); // ✅ fix bug 1
     }
     else
     {
-        int status;
-        wait(&status);
-        if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-        {
-            logEvent("decrypt", "SUCCESS");
-        }
-        else
-        {
-            logEvent("decrypt", "ERROR");
-        }
-    }
-}
-void surprise()
-{
-    logEvent("surprise", "RUNNING");
-    if (access("LoveLetter.txt", F_OK) != 0)
-    {
-        logEvent("surprise", "ERROR");
-        return;
-    }
-    pid_t pid = fork();
-    if (pid == 0)
-    {
-
-        execlp("sh", "sh", "-c", "base64 LoveLetter.txt > temp.txt && mv temp.txt LoveLetter.txt", NULL);
-        perror("exec gagal");
-        _exit(1);
-    }
-    else
-    {
-        int status;
-        wait(&status);
-        if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-        {
-            logEvent("surprise", "SUCCESS");
-        }
-        else
-        {
-            logEvent("surprise", "ERROR");
-        }
+        logEvent("CREATE", "ERROR"); // ✅ fix bug 1
     }
 }
 
 void daemonInit()
 {
+    logEvent("DAEMON", "RUNNING"); // ✅ fix bug 2
     pid_t pid = fork();
     if (pid < 0)
         exit(EXIT_FAILURE);
     if (pid > 0)
         exit(EXIT_SUCCESS);
-
     umask(0);
     setsid();
-
     fclose(stdin);
     fclose(stdout);
     fclose(stderr);
 }
+
 int main(int argc, char *argv[])
 {
-
     if (argc == 1)
     {
         printf("Penggunaan:\n");
@@ -138,7 +89,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    if (argc > 1 && strcmp(argv[1], "-daemon") == 0)
+    if (strcmp(argv[1], "-daemon") == 0)
     {
         createFile();
         daemonInit();
@@ -150,21 +101,15 @@ int main(int argc, char *argv[])
         {
             sleep(10);
             secret();
-            surprise();
         }
     }
-    else if (argc > 1 && strcmp(argv[1], "-decrypt") == 0)
-    {
-        decrypt();
-        return 0;
-    }
-    else if (argc > 1 && strcmp(argv[1], "-kill") == 0)
+    else if (strcmp(argv[1], "-kill") == 0)
     {
         logEvent("kill", "RUNNING");
         pid_t pid = fork();
         if (pid == 0)
         {
-            execlp("pkill", "pkill", "maya", NULL);
+            execlp("pkill", "pkill", "-9","-x", "maya", NULL); // ✅ fix bug 3
             perror("exec gagal");
             _exit(1);
         }
@@ -173,15 +118,11 @@ int main(int argc, char *argv[])
             int status;
             wait(&status);
             if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-            {
                 logEvent("kill", "SUCCESS");
-            }
             else
-            {
                 logEvent("kill", "ERROR");
-            }
         }
-        return 0;
     }
+
     return 0;
 }

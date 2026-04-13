@@ -5,7 +5,7 @@
 
 void error(int a)
 {
-    printf("[ERROR] Aiyaa! Proses gagal, file atau folder tidak ditemukan. %d\n",a);
+    printf("[ERROR] Aiyaa! Proses gagal, file atau folder tidak ditemukan. %d\n", a);
     exit(1);
 }
 
@@ -52,8 +52,28 @@ int main()
             error(7);
         }
     }
+
     pid = fork();
 
+    if (pid < 0)
+    {
+        error(3);
+    }
+    else if (pid == 0)
+    {
+        execlp("sh", "sh", "-c",
+               "grep 'Belum Lunas' brankas_kedai/buku_hutang.csv > brankas_kedai/daftar_penunggak.txt",
+               NULL);
+        exit(1);
+    }
+    else
+    {
+        waitpid(pid, &status, 0);
+        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        {
+            error(4);
+        }
+    }
 
     pid = fork();
 
@@ -63,7 +83,7 @@ int main()
     }
     else if (pid == 0)
     {
-        execlp("zip", "zip","-q", "-r", "rahasia_muthu.zip", "brankas_kedai", NULL);
+        execlp("zip", "zip", "-q", "-r", "rahasia_muthu.zip", "brankas_kedai", NULL);
         exit(1);
     }
     else

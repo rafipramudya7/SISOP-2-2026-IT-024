@@ -7,9 +7,9 @@
 #include <signal.h>
 #include <unistd.h>
 
+
 int restor_token = 0;
 int runStatus = 1;
-
 const char *listStatus[] = {
     "[awake]", "[drifting]", "[numbness]"};
 

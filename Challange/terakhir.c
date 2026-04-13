@@ -1,0 +1,114 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <sys/prctl.h>
+#include <sys/wait.h>
+
+void logEvent(const char *proses, const char *status)
+{
+    FILE *f = fopen("logaritma.log", "a");
+    if (!f)
+        return;
+    char waktu[512];
+    time_t t = time(NULL);
+    struct tm *tm_info = localtime(&t);
+    strftime(waktu, sizeof(waktu), "[%d:%m:%Y]-[%H:%M:%S]", tm_info);
+    fprintf(f, "%s_%s_%s\n", waktu, proses, status);
+
+    fclose(f);
+}
+void secret()
+{
+    logEvent("secret", "RUNNING");
+    FILE *tmp = fopen("logika.txt", "w");
+    if (!tmp)
+    {
+        logEvent("secret", "ERROR");
+        return;
+    };
+    char waktu[512];
+    time_t t = time(NULL);
+    struct tm *tm_info = localtime(&t);
+    strftime(waktu, sizeof(waktu), "[%d:%m:%Y]-[%H:%M:%S]", tm_info);
+    fprintf(tmp, "RECREATE THIS FILE AT %s: ", waktu);
+    fclose(tmp);
+    logEvent("secret", "SUCCESS");
+}
+void infoSignal(int sig)
+{
+    logEvent("DAEMON", "EXIT");
+}
+void daemonInit()
+{
+    pid_t pid = fork();
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    umask(0);
+    setsid();
+
+    fclose(stdin);
+    fclose(stdout);
+    fclose(stderr);
+}
+int main(int argc, char *argv[])
+{
+    srand(time(NULL));
+    signal(SIGTERM, infoSignal);
+    signal(SIGINT, infoSignal);
+    if (argc == 1)
+    {
+        printf("Penggunaan:\n");
+        printf("./angel -daemon  : jalankan sebagai daemon (nama proses: jarum)\n");
+        printf("./angel -decrypt : decrypt LoveLetter.txt\n");
+        printf("./angel -kill    : kill proses\n");
+        return 0;
+    }
+
+    if (argc > 1 && strcmp(argv[1], "-daemon") == 0)
+    {
+        daemonInit();
+        prctl(PR_SET_NAME, "jarum", 0, 0, 0);
+        memset(argv[0], 0, strlen(argv[0]));
+        strcpy(argv[0], "jarum");
+        srand(time(NULL));
+        while (1)
+        {
+            sleep(10);
+            secret();
+        }
+    }
+    else if (argc > 1 && strcmp(argv[1], "-kill") == 0)
+    {
+
+        logEvent("kill", "RUNNING");
+        pid_t pid = fork();
+        if (pid == 0)
+        {
+            execlp("sh", "sh","-c", "pkill -9 -x jarum", NULL);
+            perror("exec gagal");
+            _exit(1);
+        }
+        else
+        {
+            int status;
+            wait(&status);
+            if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+            {
+                logEvent("kill", "SUCCESS");
+            }
+            else
+            {
+                logEvent("kill", "ERROR");
+            }
+        }
+        return 0;
+    }
+    return 0;
+}
